@@ -1,9 +1,5 @@
-# Concert Backend (NestJS + Prisma + MySQL)
+When want change setting or update table
+npx prisma generate
 
-## Setup
-1. Copy `.env.example` to `.env`
-2. Run:
-   ```bash
-   npm install
-   npx prisma migrate dev --name init
-   npm run start:dev
+When want update table after change scheme in prisma\schema.prisma
+npx prisma migrate dev --name user
