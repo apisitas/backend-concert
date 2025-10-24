@@ -1,0 +1,38 @@
+{
+  "name": "backend-concert",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/apisitas/backend-concert.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/apisitas/backend-concert/issues"
+  },
+  "homepage": "https://github.com/apisitas/backend-concert#readme",
+  "dependencies": {
+    "@nestjs/common": "^11.1.7",
+    "@nestjs/config": "^4.0.2",
+    "@nestjs/core": "^11.1.7",
+    "@nestjs/platform-express": "^11.1.7",
+    "@prisma/client": "^6.18.0",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.14.2",
+    "prisma": "^6.18.0"
+  },
+  "devDependencies": {
+    "@nestjs/cli": "^11.0.10",
+    "@types/jest": "^30.0.0",
+    "jest": "^30.2.0",
+    "ts-jest": "^29.4.5",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.9.3"
+  }
+}
