@@ -13,7 +13,13 @@ async function bootstrap() {
       transform: true, // automatically transform payload to DTO instance
     }),
   );
-
+  
+  app.enableCors({
+    origin: process.env.FRONTEND_URL, // your frontend URL
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+    credentials: true, // if you use cookies
+  });
+  app.setGlobalPrefix('api');
   await app.listen(process.env.PORT ?? 3500);
 }
 bootstrap();

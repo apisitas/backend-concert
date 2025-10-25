@@ -27,9 +27,9 @@ export class ConcertsController {
     return this.service.deleteConcert(id);
   }
 
-  @Post(':concertId/reservations')
+  @Post(':id/reservations')
   async reserve(
-    @Param('concertId') concertId: string,
+    @Param('id') concertId: string,
     @Body('userId') userId: string,
   ) {
     if (!userId) {
@@ -38,9 +38,9 @@ export class ConcertsController {
     return this.service.reserveSeat(concertId, userId);
   }
 
-  @Delete(':concertId/reservations/:userId')
+  @Delete(':id/reservations/:userId')
   async cancel(
-    @Param('concertId') concertId: string,
+    @Param('id') concertId: string,
     @Param('userId') userId: string,
   ) {
     if (!userId) {
