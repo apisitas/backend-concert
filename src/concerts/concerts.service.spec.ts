@@ -7,48 +7,75 @@ describe('ConcertsService', () => {
   let service: ConcertsService;
   let prisma: PrismaService;
 
-  beforeAll(async () => {
+  const mockPrisma = {
+    user: { findUnique: jest.fn() },
+    concert: { findUnique: jest.fn() },
+    reservation: {
+      findUnique: jest.fn(),
+      create: jest.fn(),
+    },
+  };
+
+  beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [ConcertsService, PrismaService],
+      providers: [
+        ConcertsService,
+        { provide: PrismaService, useValue: mockPrisma },
+      ],
     }).compile();
 
     service = module.get<ConcertsService>(ConcertsService);
     prisma = module.get<PrismaService>(PrismaService);
-    await prisma.$connect();
+
+    jest.clearAllMocks();
   });
 
-  // Clean DB before each test to avoid unique constraint errors
-  beforeEach(async () => {
-    await prisma.reservation.deleteMany();
-    await prisma.concert.deleteMany();
-    await prisma.user.deleteMany();
+  it('should reserve a seat successfully', async () => {
+    const userId = 'user1';
+    const concertId = 'concert1';
+
+    mockPrisma.user.findUnique.mockResolvedValue({ id: userId });
+    mockPrisma.concert.findUnique.mockResolvedValue({
+      id: concertId,
+      totalSeats: 1,
+      reservations: [], // must include reservations array
+    });
+    mockPrisma.reservation.findUnique.mockResolvedValue(null);
+    mockPrisma.reservation.create.mockResolvedValue({ id: 'res1' });
+
+    const result = await service.reserveSeat(concertId, userId);
+
+    expect(result).toEqual({ id: 'res1' });
+    expect(mockPrisma.reservation.create).toHaveBeenCalledWith(expect.objectContaining({
+      data: { concertId, userId },
+    }));
   });
 
-  afterAll(async () => {
-    await prisma.$disconnect();
-  });
+  it('should throw ConflictException if seats are full', async () => {
+    const userId = 'user2';
+    const concertId = 'concert1';
 
-  it('should prevent double reservation by same user', async () => {
-    const user = await prisma.user.create({ data: { email: `a+${Date.now()}@example.com` } });
-    const concert = await prisma.concert.create({ data: { name: `Concert-${Date.now()}`, description: 'Test concert description', totalSeats: 1 } });
-
-    await service.reserveSeat(concert.id, user.id);
-
-    await expect(service.reserveSeat(concert.id, user.id)).rejects.toThrow(ConflictException);
-  });
-
-  it('should not oversell seats under sequential reservations', async () => {
-    const user1 = await prisma.user.create({ data: { email: `u1+${Date.now()}@example.com` } });
-    const user2 = await prisma.user.create({ data: { email: `u2+${Date.now()}@example.com` } });
-    const concert = await prisma.concert.create({
-      data: {
-        name: `SaleTest-${Date.now()}`,
-        totalSeats: 1,
-        description: 'Sequential reservation test',
-      },
+    mockPrisma.concert.findUnique.mockResolvedValue({
+      id: concertId,
+      totalSeats: 1,
+      reservations: [{ id: 'res1', userId: 'user1' }], // full
     });
 
-    await service.reserveSeat(concert.id, user1.id);
-    await expect(service.reserveSeat(concert.id, user2.id)).rejects.toThrow(ConflictException);
+    await expect(service.reserveSeat(concertId, userId))
+      .rejects
+      .toBeInstanceOf(ConflictException);
   });
+
+
+  it('should throw ConflictException if user already reserved', async () => {
+    const userId = 'user1';
+    const concertId = 'concert1';
+
+    mockPrisma.reservation.findUnique.mockResolvedValue({ id: 'res1' });
+
+    await expect(service.reserveSeat(concertId, userId))
+      .rejects
+      .toBeInstanceOf(ConflictException);
+  });
+
 });

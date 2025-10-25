@@ -18,5 +18,5 @@ Seed data
 npx prisma db seed
 
 
-for drop all data and table * development only *
+for drop all data and table * development only * it will run seed file too
 npx prisma migrate reset
