@@ -32,13 +32,19 @@ model Concert {
   reservations Reservation[]
 }
 
+enum ReservationAction {
+  RESERVE
+  CANCEL
+}
+
 model Reservation {
-  id         String   @id @default(cuid())
-  user       User     @relation(fields: [userId], references: [id])
-  userId     String
-  concert    Concert  @relation(fields: [concertId], references: [id], onDelete: Cascade)
-  concertId  String
-  createdAt  DateTime @default(now())
+  id        String            @id @default(cuid())
+  user      User              @relation(fields: [userId], references: [id])
+  userId    String
+  concert   Concert           @relation(fields: [concertId], references: [id], onDelete: Cascade)
+  concertId String
+  createdAt DateTime          @default(now())
+  action    ReservationAction @default(RESERVE)
 
   @@unique([userId, concertId])
 }

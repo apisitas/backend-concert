@@ -5,7 +5,7 @@ import { BadRequestException } from '@nestjs/common';
 
 @Controller('concerts')
 export class ConcertsController {
-  constructor(private readonly service: ConcertsService) {}
+  constructor(private readonly service: ConcertsService) { }
 
   @Post()
   async create(@Body() data: CreateConcertDto) {
@@ -15,6 +15,16 @@ export class ConcertsController {
   @Get()
   async findAll() {
     return this.service.getAllConcerts();
+  }
+
+  @Get('stats')
+  async getStats() {
+    return this.service.getConcertStats();
+  }
+
+  @Get('reservations')
+  async getAllReservations() {
+    return this.service.getAllReservations();
   }
 
   @Get(':id')

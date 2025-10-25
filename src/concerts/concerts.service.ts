@@ -105,4 +105,38 @@ export class ConcertsService {
             throw new InternalServerErrorException('Failed to cancel reservation');
         }
     }
+
+    async getAllReservations() {
+        return this.prisma.reservation.findMany({
+            include: {
+                user: true,     // include user info
+                concert: true,  // include concert info
+            },
+            orderBy: {
+                createdAt: 'desc',
+            },
+        });
+    }
+
+    async getConcertStats() {
+        const totalSeats = await this.prisma.concert.aggregate({
+            _sum: { totalSeats: true },
+        });
+
+        const totalReserve = await this.prisma.reservation.count({
+            where: { action: 'RESERVE' },
+        });
+
+        const totalCancel = await this.prisma.reservation.count({
+            where: { action: 'CANCEL' },
+        });
+
+        return {
+            totalSeats: totalSeats._sum.totalSeats || 0,
+            totalReserve,
+            totalCancel,
+        };
+    }
+
+
 }

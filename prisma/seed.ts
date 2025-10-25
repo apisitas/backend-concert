@@ -101,16 +101,23 @@ async function main() {
         if (existing) continue;
 
         // Skip if concert is full
-        const count = await prisma.reservation.count({ where: { concertId: randomConcert.id } });
+        const count = await prisma.reservation.count({
+            where: { concertId: randomConcert.id, action: 'RESERVE' },
+        });
         if (count >= randomConcert.totalSeats) continue;
+
+        // Randomly pick action
+        const randomAction = Math.random() < 0.8 ? 'RESERVE' : 'CANCEL'; // 80% reserve, 20% cancel
 
         await prisma.reservation.create({
             data: {
                 userId: randomUser.id,
                 concertId: randomConcert.id,
+                action: randomAction,
             },
         });
     }
+
 
     console.log('Database seeding completed!');
 }

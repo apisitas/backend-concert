@@ -1,11 +1,11 @@
-When want change setting or update table
+When start using prisma
 npx prisma generate
 
 
-<!-- When want update table after change scheme in prisma\schema.prisma
-npx prisma migrate dev --name user -->
+When want update table after change scheme in prisma\schema.prisma
+npx prisma migrate dev --name user
 
-npx prisma migrate dev
+<!-- npx prisma migrate dev -->
 
 nest generate module users
 nest generate service users
