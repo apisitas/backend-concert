@@ -60,45 +60,48 @@ export class ConcertsService {
         }
     }
 
-    async reserveSeat(concertId: string, userId: string) {
+    async reserveSeat(concertId: string, userEmail: string) {
         const concert = await this.prisma.concert.findUnique({
             where: { id: concertId },
             include: { reservations: true },
         });
         if (!concert) throw new NotFoundException(`Concert with ID "${concertId}" not found`);
 
-        const user = await this.prisma.user.findUnique({ where: { id: userId } });
-        if (!user) throw new NotFoundException(`User with ID "${userId}" not found`);
+        // Find user by email instead of ID
+        const user = await this.prisma.user.findUnique({ where: { email: userEmail } });
+        if (!user) throw new NotFoundException(`User with email "${userEmail}" not found`);
 
         // Prevent double booking
         const existing = await this.prisma.reservation.findUnique({
-            where: { userId_concertId: { userId, concertId } },
+            where: { userId_concertId: { userId: user.id, concertId } },
         });
-        if (existing) throw new ConflictException(`User "${userId}" already reserved this concert`);
+        if (existing) throw new ConflictException(`User "${userEmail}" already reserved this concert`);
 
-        // **Check if seats are available**
+        // Check if seats are available
         if (concert.reservations.length >= concert.totalSeats) {
             throw new ConflictException('No seats available');
         }
 
-        return await this.prisma.reservation.create({ data: { concertId, userId } });
+        return await this.prisma.reservation.create({ data: { concertId, userId: user.id } });
     }
 
+    async cancelReservation(concertId: string, userEmail: string) {
+        const user = await this.prisma.user.findUnique({ where: { email: userEmail } });
+        if (!user) throw new NotFoundException(`User with email "${userEmail}" not found`);
 
-    async cancelReservation(concertId: string, userId: string) {
         const reservation = await this.prisma.reservation.findUnique({
-            where: { userId_concertId: { userId, concertId } },
+            where: { userId_concertId: { userId: user.id, concertId } },
         });
 
         if (!reservation) {
-            throw new NotFoundException(
-                `Reservation not found for user "${userId}" on concert "${concertId}"`,
-            );
+            throw new NotFoundException(`Reservation not found for user "${userEmail}" on concert "${concertId}"`);
         }
 
         try {
-            return await this.prisma.reservation.delete({
+            // Soft cancel
+            return await this.prisma.reservation.update({
                 where: { id: reservation.id },
+                data: { action: 'CANCEL' },
             });
         } catch (error) {
             console.error(error);
@@ -108,6 +111,19 @@ export class ConcertsService {
 
     async getAllReservations() {
         return this.prisma.reservation.findMany({
+            include: {
+                user: true,     // include user info
+                concert: true,  // include concert info
+            },
+            orderBy: {
+                createdAt: 'desc',
+            },
+        });
+    }
+
+    async getAllReservationsByUser(userId: string) {
+        return this.prisma.reservation.findMany({
+            where: { userId },
             include: {
                 user: true,     // include user info
                 concert: true,  // include concert info
@@ -136,6 +152,10 @@ export class ConcertsService {
             totalReserve,
             totalCancel,
         };
+    }
+
+    async getUserByEmail(email: string) {
+        return this.prisma.user.findUnique({ where: { email } });
     }
 
 

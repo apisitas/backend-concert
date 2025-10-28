@@ -1,20 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConcertsController } from './concerts.controller';
 import { ConcertsService } from './concerts.service';
-import { BadRequestException, ConflictException } from '@nestjs/common';
+import { BadRequestException } from '@nestjs/common';
 
 describe('ConcertsController', () => {
   let controller: ConcertsController;
   let service: ConcertsService;
-
-  const mockConcertsService = {
-    createConcert: jest.fn(),
-    getAllConcerts: jest.fn(),
-    getConcert: jest.fn(),
-    deleteConcert: jest.fn(),
-    reserveSeat: jest.fn(),
-    cancelReservation: jest.fn(),
-  };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -22,7 +13,18 @@ describe('ConcertsController', () => {
       providers: [
         {
           provide: ConcertsService,
-          useValue: mockConcertsService,
+          useValue: {
+            createConcert: jest.fn(),
+            getAllConcerts: jest.fn(),
+            getConcertStats: jest.fn(),
+            getAllReservations: jest.fn(),
+            getAllReservationsByUser: jest.fn(),
+            getConcert: jest.fn(),
+            deleteConcert: jest.fn(),
+            reserveSeat: jest.fn(),
+            cancelReservation: jest.fn(),
+            getUserByEmail: jest.fn(),
+          },
         },
       ],
     }).compile();
@@ -31,53 +33,44 @@ describe('ConcertsController', () => {
     service = module.get<ConcertsService>(ConcertsService);
   });
 
-  afterEach(() => {
-    jest.resetAllMocks(); // reset mocks between tests
-  });
-
   it('should be defined', () => {
     expect(controller).toBeDefined();
   });
 
-  it('should throw BadRequestException if userId is missing when reserving', async () => {
-    await expect(controller.reserve('concertId', undefined as any))
-      .rejects
-      .toThrow(BadRequestException);
-  });
+  describe('handleReservationAction', () => {
+    const concertId = '123';
+    const email = 'test@example.com';
 
-  it('should throw BadRequestException if userId is missing when cancelling', async () => {
-    await expect(controller.cancel('concertId', undefined as any))
-      .rejects
-      .toThrow(BadRequestException);
-  });
+    it('should call reserveSeat when action is RESERVE', async () => {
+      const mockResult = { message: 'Seat reserved' };
+      (service.reserveSeat as jest.Mock).mockResolvedValue(mockResult);
 
-  it('should call service.reserveSeat when reserving with valid data', async () => {
-    const userId = 'user1';
-    const concertId = 'concert1';
-    mockConcertsService.reserveSeat.mockResolvedValue('reserved');
+      const result = await controller.handleReservationAction(concertId, email, 'RESERVE');
 
-    const result = await controller.reserve(concertId, userId);
-    expect(service.reserveSeat).toHaveBeenCalledWith(concertId, userId);
-    expect(result).toBe('reserved');
-  });
+      expect(service.reserveSeat).toHaveBeenCalledWith(concertId, email);
+      expect(result).toEqual(mockResult);
+    });
 
-  it('should call service.cancelReservation when cancelling with valid data', async () => {
-    const userId = 'user1';
-    const concertId = 'concert1';
-    mockConcertsService.cancelReservation.mockResolvedValue('cancelled');
+    it('should call cancelReservation when action is CANCEL', async () => {
+      const mockResult = { message: 'Reservation cancelled' };
+      (service.cancelReservation as jest.Mock).mockResolvedValue(mockResult);
 
-    const result = await controller.cancel(concertId, userId);
-    expect(service.cancelReservation).toHaveBeenCalledWith(concertId, userId);
-    expect(result).toBe('cancelled');
-  });
+      const result = await controller.handleReservationAction(concertId, email, 'CANCEL');
 
-  it('should handle ConflictException from reserveSeat', async () => {
-    const userId = 'user1';
-    const concertId = 'concert1';
-    mockConcertsService.reserveSeat.mockRejectedValue(new ConflictException());
+      expect(service.cancelReservation).toHaveBeenCalledWith(concertId, email);
+      expect(result).toEqual(mockResult);
+    });
 
-    await expect(controller.reserve(concertId, userId))
-      .rejects
-      .toBeInstanceOf(ConflictException);
+    it('should throw BadRequestException for invalid action', async () => {
+      await expect(
+        controller.handleReservationAction(concertId, email, 'INVALID' as any),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw BadRequestException when email is missing', async () => {
+      await expect(
+        controller.handleReservationAction(concertId, '' as any, 'RESERVE'),
+      ).rejects.toThrow(BadRequestException);
+    });
   });
 });
