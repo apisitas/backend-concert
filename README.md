@@ -20,7 +20,8 @@ for drop all data and table * development only * it will run seed file too
 npx prisma migrate reset -->
 
 1. Create database concert_db (Can check in .env)
-2. npm test
-3. npx prisma migrate dev
-4. npx prisma db seed
-5. npm run start    
+2. npm install
+3. npm test
+4. npx prisma migrate dev
+5. npx prisma db seed
+6. npm run start    
